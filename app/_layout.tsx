@@ -11,6 +11,7 @@ import * as SplashScreen from "expo-splash-screen";
 import { setStatusBarBackgroundColor, StatusBar } from "expo-status-bar";
 import { useEffect } from "react";
 import {
+  AppState,
   Text as RNText,
   TextInput as RNTextInput,
   StyleSheet,
@@ -83,14 +84,17 @@ export default function Layout() {
 
   useEffect(() => {
     playerService.initialize();
-  }, []);
-
-  useEffect(() => {
     void updateService.checkOnLaunch();
-  }, []);
 
-  useEffect(() => {
     setStatusBarBackgroundColor("#121212", false);
+
+    const subscription = AppState.addEventListener("change", (nextAppState) => {
+      if (nextAppState === "inactive") {
+        playerService.stop();
+      }
+    });
+
+    return () => subscription.remove();
   }, []);
 
   useEffect(() => {

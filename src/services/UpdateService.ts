@@ -18,13 +18,7 @@ type CheckResponse = {
   forceUpdate?: boolean;
 };
 
-type UpdateCheckCache = {
-  checkedAt: number;
-  response: CheckResponse;
-};
-
 const UPDATE_CHECK_ENDPOINT = "https://sausico.pages.dev/update/check";
-const CACHE_WINDOW_MS = 24 * 60 * 60 * 1000;
 
 let hasCheckedThisSession = false;
 
@@ -34,21 +28,6 @@ class UpdateService {
     if (hasCheckedThisSession) return;
 
     hasCheckedThisSession = true;
-
-    try {
-      const cachedRaw = await appStorage.getItem(
-        STORAGE_KEYS.UPDATE_CHECK_CACHE
-      );
-
-      if (cachedRaw) {
-        const cached = JSON.parse(cachedRaw) as UpdateCheckCache;
-
-        if (Date.now() - cached.checkedAt < CACHE_WINDOW_MS) {
-          this.handleCheckResponse(cached.response);
-          return;
-        }
-      }
-    } catch {}
 
     try {
       const payload = {
@@ -186,8 +165,6 @@ class UpdateService {
   }
 
   getDeviceArchitecture(): string {
-    if (Platform.OS !== "android") return "arm64-v8a";
-
     const platformConstants = Platform.constants as
       | { SupportedAbis?: string[] }
       | undefined;

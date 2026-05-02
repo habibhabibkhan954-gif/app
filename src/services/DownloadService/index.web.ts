@@ -1,24 +1,7 @@
 import { AUDIO_QUALITY, STORAGE_KEYS } from "@/constants";
 import { appStorage } from "@/stores/storage";
 import { Models, Song } from "@saavn-labs/sdk";
-
-export interface DownloadedTrack {
-  id: string;
-  song: Models.Song;
-  filePath: string;
-  downloadedAt: number;
-  fileSize: number;
-  quality: string;
-}
-
-export interface DownloadProgress {
-  id: string;
-  progress: number;
-  totalBytes: number;
-  downloadedBytes: number;
-  status: "pending" | "downloading" | "completed" | "failed" | "paused";
-  error?: string;
-}
+import { DownloadProgress, DownloadedTrack } from "./index.native";
 
 const DB_NAME = "sausico_downloads";
 const DB_VERSION = 1;

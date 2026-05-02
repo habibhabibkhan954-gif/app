@@ -5,7 +5,7 @@ import { PlayerStatus, RepeatMode } from "@/types";
 import { Models, Song } from "@saavn-labs/sdk";
 import type { TrackItem } from "react-native-nitro-player";
 import { PlayerQueue, TrackPlayer } from "react-native-nitro-player";
-import { queueService } from "./QueueService";
+import { queueService } from "../QueueService";
 
 export interface PlayerState {
   status: PlayerStatus;
@@ -55,7 +55,7 @@ export class PlayerService implements IPlayerService {
       androidAutoEnabled: true,
       carPlayEnabled: true,
       showInNotification: true,
-      lookaheadCount: 4,
+      lookaheadCount: 5,
     });
 
     this.setupEventListeners();
@@ -123,8 +123,8 @@ export class PlayerService implements IPlayerService {
       });
 
       const fullQueue = await queueService.setQueue(song, providedQueue);
-      const tracks = await Promise.all(fullQueue.map((s) => this.prepareTrack(s)));
-      const validTracks = tracks.filter((t): t is TrackItem => t !== null);
+      const tracks = await Promise.all(fullQueue.map((s: Models.Song) => this.prepareTrack(s)));
+      const validTracks = tracks.filter((t: TrackItem | null): t is TrackItem => !!t);
 
       if (validTracks.length === 0) {
         throw new Error("No valid tracks");
@@ -165,8 +165,8 @@ export class PlayerService implements IPlayerService {
 
     try {
       const fullQueue = await queueService.setQueue(currentSong);
-      const tracks = await Promise.all(fullQueue.map((s) => this.prepareTrack(s)));
-      const validTracks = tracks.filter((t): t is TrackItem => t !== null);
+      const tracks = await Promise.all(fullQueue.map((s: Models.Song) => this.prepareTrack(s)));
+      const validTracks = tracks.filter((t: TrackItem | null): t is TrackItem => !!t);
 
       if (validTracks.length === 0) {
         throw new Error("No valid tracks prepared");
@@ -279,10 +279,12 @@ export class PlayerService implements IPlayerService {
       this.currentPlaylistId = null;
     }
 
+    TrackPlayer.pause();
+
     queueService.clear();
 
     this.notify({
-      status: "loading",
+      status: "paused",
       currentSong: null,
       upcomingTracks: [],
       progress: 0,
@@ -377,8 +379,8 @@ export class PlayerService implements IPlayerService {
 
       if (newSongs.length === 0) return false;
 
-      const tracks = await Promise.all(newSongs.map((s) => this.prepareTrack(s)));
-      const validTracks = tracks.filter((t): t is TrackItem => t !== null);
+      const tracks = await Promise.all(newSongs.map((s: Models.Song) => this.prepareTrack(s)));
+      const validTracks = tracks.filter((t: TrackItem | null): t is TrackItem => !!t);
 
       if (validTracks.length === 0) return false;
 
