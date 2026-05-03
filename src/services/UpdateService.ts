@@ -3,6 +3,7 @@ import { useSnackbarStore } from "@/stores/snackbarStore";
 import { appStorage } from "@/stores/storage";
 import { useUpdateStore } from "@/stores/updateStore";
 import * as Application from "expo-application";
+import * as Device from "expo-device";
 import * as IntentLauncher from "expo-intent-launcher";
 import { NativeModules, Platform } from "react-native";
 import RNFetchBlob from "react-native-blob-util";
@@ -54,31 +55,94 @@ class UpdateService {
       );
 
       this.handleCheckResponse(data);
-    } catch {}
+    } catch { }
   }
 
   private handleCheckResponse(response: CheckResponse): void {
-    if (!response.updateAvailable) return;
+    if (!response.updateAvailable) {
+      useUpdateStore.getState().clearUpdateAvailable();
+      return;
+    }
 
     const apkUrl = response.apkUrl ?? response.apk?.url;
     const latestVersion = response.latestVersion ?? response.version;
 
-    if (!apkUrl) return;
+    if (!apkUrl) {
+      useUpdateStore.getState().clearUpdateAvailable();
+      return;
+    }
 
-    useUpdateStore.getState().showUpdate({
+    const forceUpdate = Boolean(response.forceUpdate);
+
+    if (forceUpdate) {
+      useUpdateStore.getState().showUpdate({
+        latestVersion,
+        apkUrl,
+        releaseName: response.name,
+        releaseUrl: response.releaseUrl,
+        forceUpdate,
+      });
+      return;
+    }
+
+    useUpdateStore.getState().setUpdateAvailable({
       latestVersion,
       apkUrl,
       releaseName: response.name,
       releaseUrl: response.releaseUrl,
-      forceUpdate: Boolean(response.forceUpdate),
+      forceUpdate,
     });
   }
 
+  // Starts the download and installation flow
   async startDownloadAndInstall(): Promise<void> {
     if (Platform.OS !== "android") return;
 
+    const hasPermission = await this.checkInstallPermission();
+
+    if (!hasPermission) {
+      await this.requestInstallPermission();
+      return;
+    }
+
+    const apkPath = await this.downloadApk();
+
+    if (apkPath) {
+      await this.installApk(apkPath);
+    }
+  }
+
+  // Phase 1: Check
+  private async checkInstallPermission(): Promise<boolean> {
+    return await Device.isSideLoadingEnabledAsync();
+  }
+
+  private async requestInstallPermission(): Promise<void> {
+    const packageName = Application.applicationId;
+
+    useSnackbarStore.getState().show({
+      message: "Enable Install unknown apps to proceed. Tap Settings.",
+      variant: "warning",
+      actionLabel: "Settings",
+      onAction: async () => {
+        try {
+          await IntentLauncher.startActivityAsync(
+            "android.settings.MANAGE_UNKNOWN_APP_SOURCES",
+            {
+              data: `package:${packageName}`,
+            }
+          );
+        } catch (error) {
+          console.error("Settings open failed:", error);
+        }
+      }
+    });
+  }
+
+  // Phase 3: Download
+  private async downloadApk(): Promise<string | null> {
     const { apkUrl } = useUpdateStore.getState();
-    if (!apkUrl) return;
+    if (!apkUrl) return null;
 
     const updateStore = useUpdateStore.getState();
 
@@ -88,7 +152,6 @@ class UpdateService {
 
     try {
       const { config, fs } = RNFetchBlob;
-
       const path = `${fs.dirs.DownloadDir}/app-update.apk`;
 
       const res = await config({
@@ -112,9 +175,7 @@ class UpdateService {
 
       await appStorage.setItem(STORAGE_KEYS.UPDATE_APK_URI, apkPath);
 
-      await this.installApk(apkPath);
-
-      updateStore.completeFlow();
+      return apkPath;
     } catch (err) {
       console.error("Update failed:", err);
 
@@ -129,9 +190,12 @@ class UpdateService {
           this.startDownloadAndInstall();
         },
       });
+
+      return null;
     }
   }
 
+  // Phase 4: Install
   private async installApk(apkPath: string): Promise<void> {
     try {
       const FLAG_GRANT_READ_URI_PERMISSION = 0x00000001;
@@ -142,17 +206,16 @@ class UpdateService {
         {
           data: `file://${apkPath}`,
           type: "application/vnd.android.package-archive",
-          flags:
-            FLAG_GRANT_READ_URI_PERMISSION | FLAG_ACTIVITY_NEW_TASK,
+          flags: FLAG_GRANT_READ_URI_PERMISSION | FLAG_ACTIVITY_NEW_TASK,
         }
       );
+
+      useUpdateStore.getState().completeFlow();
     } catch (err) {
       console.error("Install failed:", err);
 
-      useSnackbarStore.getState().show({
-        message: "Please enable 'Install unknown apps' permission",
-        variant: "warning",
-      });
+      // Fallback triggers ask phase if the initial check was bypassed
+      await this.requestInstallPermission();
     }
   }
 
@@ -171,8 +234,8 @@ class UpdateService {
 
     const nativeSupportedAbis = (
       NativeModules.PlatformConstants as
-        | { SupportedAbis?: string[] }
-        | undefined
+      | { SupportedAbis?: string[] }
+      | undefined
     )?.SupportedAbis;
 
     const supportedAbis =

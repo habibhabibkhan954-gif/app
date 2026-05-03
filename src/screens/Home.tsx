@@ -1,6 +1,6 @@
 import { GenericMediaItem, TrackItem } from "@/components";
 import { AUDIO_QUALITY, COLORS, UI_CONFIG } from "@/constants";
-import { useHomeStore, usePlayerStore } from "@/stores";
+import { useHomeStore, usePlayerStore, useUpdateStore } from "@/stores";
 import { getScreenPaddingBottom } from "@/utils";
 import { Models } from "@saavn-labs/sdk";
 
@@ -8,31 +8,31 @@ import { LinearGradient } from "expo-linear-gradient";
 import * as Network from "expo-network";
 import { router } from "expo-router";
 import React, {
-  useCallback,
-  useEffect,
-  useMemo,
-  useRef,
-  useState,
+    useCallback,
+    useEffect,
+    useMemo,
+    useRef,
+    useState,
 } from "react";
 import {
-  Animated,
-  Dimensions,
-  FlatList,
-  Image,
-  ScrollView,
-  StatusBar,
-  StyleSheet,
-  TouchableOpacity,
-  View,
+    Animated,
+    Dimensions,
+    FlatList,
+    Image,
+    ScrollView,
+    StatusBar,
+    StyleSheet,
+    TouchableOpacity,
+    View,
 } from "react-native";
 import {
-  Button,
-  Chip,
-  IconButton,
-  Modal,
-  Portal,
-  RadioButton,
-  Text,
+    Button,
+    Chip,
+    IconButton,
+    Modal,
+    Portal,
+    RadioButton,
+    Text,
 } from "react-native-paper";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
@@ -223,6 +223,7 @@ const HomeScreen: React.FC<HomeScreenProps> = ({
   deferInitialLoad = false,
 }) => {
   const { playSong, currentSong } = usePlayerStore();
+  const { updateAvailable, openUpdateDialog } = useUpdateStore();
   const insets = useSafeAreaInsets();
   const bottomPadding = getScreenPaddingBottom(true, true) + insets.bottom;
 
@@ -538,6 +539,18 @@ const HomeScreen: React.FC<HomeScreenProps> = ({
               {greeting}
             </Text>
             <View style={{ flexDirection: "row", gap: 8 }}>
+              {updateAvailable ? (
+                <View style={styles.updateIconWrapper}>
+                  <IconButton
+                    icon="update"
+                    iconColor="#fff"
+                    size={24}
+                    onPress={openUpdateDialog}
+                    style={styles.headerNavButton}
+                  />
+                  <View style={styles.updateBadge} />
+                </View>
+              ) : null}
               <IconButton
                 icon="history"
                 iconColor="#fff"
@@ -683,6 +696,20 @@ const styles = StyleSheet.create({
   },
   headerNavButton: {
     margin: 0,
+  },
+  updateIconWrapper: {
+    position: "relative",
+  },
+  updateBadge: {
+    position: "absolute",
+    right: 4,
+    top: 4,
+    width: 10,
+    height: 10,
+    borderRadius: 999,
+    backgroundColor: "#ff9800",
+    borderWidth: 2,
+    borderColor: "#121212",
   },
   searchButton: {
     flexDirection: "row",

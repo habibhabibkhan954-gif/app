@@ -8,6 +8,7 @@ export type UpdateDownloadState =
 
 interface UpdateState {
   visible: boolean;
+  updateAvailable: boolean;
   forceUpdate: boolean;
   latestVersion: string | null;
   apkUrl: string | null;
@@ -16,6 +17,15 @@ interface UpdateState {
   downloadState: UpdateDownloadState;
   progress: number;
   error: string | null;
+  setUpdateAvailable: (payload: {
+    latestVersion?: string;
+    apkUrl: string;
+    forceUpdate?: boolean;
+    releaseName?: string;
+    releaseUrl?: string;
+  }) => void;
+  openUpdateDialog: () => void;
+  clearUpdateAvailable: () => void;
   showUpdate: (payload: {
     latestVersion?: string;
     apkUrl: string;
@@ -33,6 +43,7 @@ interface UpdateState {
 
 const initialState = {
   visible: false,
+  updateAvailable: false,
   forceUpdate: false,
   latestVersion: null,
   apkUrl: null,
@@ -45,6 +56,46 @@ const initialState = {
 
 export const useUpdateStore = create<UpdateState>((set) => ({
   ...initialState,
+  setUpdateAvailable: ({
+    latestVersion,
+    apkUrl,
+    forceUpdate = false,
+    releaseName,
+    releaseUrl,
+  }) =>
+    set({
+      visible: false,
+      updateAvailable: true,
+      latestVersion: latestVersion ?? null,
+      apkUrl,
+      releaseName: releaseName ?? null,
+      releaseUrl: releaseUrl ?? null,
+      forceUpdate,
+      downloadState: "idle",
+      progress: 0,
+      error: null,
+    }),
+  openUpdateDialog: () =>
+    set((state) =>
+      state.updateAvailable
+        ? {
+            visible: true,
+          }
+        : state,
+    ),
+  clearUpdateAvailable: () =>
+    set({
+      updateAvailable: false,
+      forceUpdate: false,
+      latestVersion: null,
+      apkUrl: null,
+      releaseName: null,
+      releaseUrl: null,
+      visible: false,
+      downloadState: "idle",
+      progress: 0,
+      error: null,
+    }),
   showUpdate: ({
     latestVersion,
     apkUrl,
@@ -54,6 +105,7 @@ export const useUpdateStore = create<UpdateState>((set) => ({
   }) =>
     set({
       visible: true,
+      updateAvailable: true,
       latestVersion: latestVersion ?? null,
       apkUrl,
       releaseName: releaseName ?? null,
@@ -78,6 +130,7 @@ export const useUpdateStore = create<UpdateState>((set) => ({
   completeFlow: () =>
     set({
       visible: false,
+      updateAvailable: false,
       forceUpdate: false,
       latestVersion: null,
       apkUrl: null,

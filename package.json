@@ -1,10 +1,12 @@
 {
   "name": "sausico",
   "main": "expo-router/entry",
-  "version": "1.0.3",
+  "version": "1.0.4",
   "scripts": {
     "start": "expo start",
     "android": "expo run:android",
+    "build": "npx expo export -p web",
+    "build:android": "cd android && ./gradlew assembleRelease && cd ../",
     "lint": "expo lint",
     "ios": "expo run:ios"
   },

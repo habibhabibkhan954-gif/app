@@ -2,12 +2,16 @@
   "expo": {
     "name": "Sausico",
     "slug": "sausico",
-    "version": "1.0.3",
+    "version": "1.0.4",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
     "scheme": "sausico",
     "userInterfaceStyle": "dark",
     "newArchEnabled": true,
+    "notification": {
+      "icon": "./assets/images/android-icon-monochrome.png",
+      "color": "#ffffff"
+    },
     "android": {
       "intentFilters": [
         {
@@ -32,10 +36,21 @@
       "predictiveBackGestureEnabled": false,
       "package": "com.saavnlabs.app",
       "permissions": [
-        "android.permission.MODIFY_AUDIO_SETTINGS",
-        "android.permission.WAKE_LOCK",
+        "android.permission.ACCESS_MEDIA_LOCATION",
+        "android.permission.ACCESS_NETWORK_STATE",
         "android.permission.FOREGROUND_SERVICE",
-        "android.permission.FOREGROUND_SERVICE_MEDIA_PLAYBACK"
+        "android.permission.FOREGROUND_SERVICE_MEDIA_PLAYBACK",
+        "android.permission.INTERNET",
+        "android.permission.MODIFY_AUDIO_SETTINGS",
+        "android.permission.POST_NOTIFICATIONS",
+        "android.permission.READ_EXTERNAL_STORAGE",
+        "android.permission.READ_MEDIA_AUDIO",
+        "android.permission.RECORD_AUDIO",
+        "android.permission.REQUEST_INSTALL_PACKAGES",
+        "android.permission.SYSTEM_ALERT_WINDOW",
+        "android.permission.VIBRATE",
+        "android.permission.WAKE_LOCK",
+        "android.permission.WRITE_EXTERNAL_STORAGE"
       ]
     },
     "web": {
