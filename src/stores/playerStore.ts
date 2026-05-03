@@ -33,6 +33,7 @@ export const usePlayerStore = create<PlayerStore>()(
         set((state) => ({ ...state, ...updates }));
       });
 
+
       return {
         status: "paused",
         currentSong: null,

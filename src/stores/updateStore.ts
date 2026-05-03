@@ -6,10 +6,16 @@ export type UpdateDownloadState =
   | "download-failed"
   | "installing";
 
+export type UpdatePrompt =
+  | "none"
+  | "install-permission"
+  | "install-permission-return";
+
 interface UpdateState {
   visible: boolean;
   updateAvailable: boolean;
   forceUpdate: boolean;
+  prompt: UpdatePrompt;
   latestVersion: string | null;
   apkUrl: string | null;
   releaseName: string | null;
@@ -34,6 +40,7 @@ interface UpdateState {
     releaseUrl?: string;
   }) => void;
   hideUpdate: () => void;
+  setPrompt: (prompt: UpdatePrompt) => void;
   setDownloadState: (state: UpdateDownloadState) => void;
   setProgress: (progress: number) => void;
   setError: (error: string | null) => void;
@@ -45,6 +52,7 @@ const initialState = {
   visible: false,
   updateAvailable: false,
   forceUpdate: false,
+  prompt: "none" as UpdatePrompt,
   latestVersion: null,
   apkUrl: null,
   releaseName: null,
@@ -66,6 +74,7 @@ export const useUpdateStore = create<UpdateState>((set) => ({
     set({
       visible: false,
       updateAvailable: true,
+      prompt: "none",
       latestVersion: latestVersion ?? null,
       apkUrl,
       releaseName: releaseName ?? null,
@@ -87,6 +96,7 @@ export const useUpdateStore = create<UpdateState>((set) => ({
     set({
       updateAvailable: false,
       forceUpdate: false,
+      prompt: "none",
       latestVersion: null,
       apkUrl: null,
       releaseName: null,
@@ -106,6 +116,7 @@ export const useUpdateStore = create<UpdateState>((set) => ({
     set({
       visible: true,
       updateAvailable: true,
+      prompt: "none",
       latestVersion: latestVersion ?? null,
       apkUrl,
       releaseName: releaseName ?? null,
@@ -116,13 +127,23 @@ export const useUpdateStore = create<UpdateState>((set) => ({
       error: null,
     }),
   hideUpdate: () =>
-    set((state) => (state.forceUpdate ? state : { visible: false })),
+    set((state) =>
+      state.forceUpdate
+        ? state
+        : {
+            visible: false,
+            prompt: "none",
+            error: null,
+          },
+    ),
+  setPrompt: (prompt) => set({ prompt }),
   setDownloadState: (downloadState) => set({ downloadState }),
   setProgress: (progress) => set({ progress }),
   setError: (error) => set({ error }),
   resetFlow: () =>
     set((state) => ({
       ...state,
+      prompt: "none",
       downloadState: "idle",
       progress: 0,
       error: null,
@@ -132,6 +153,7 @@ export const useUpdateStore = create<UpdateState>((set) => ({
       visible: false,
       updateAvailable: false,
       forceUpdate: false,
+      prompt: "none",
       latestVersion: null,
       apkUrl: null,
       releaseName: null,

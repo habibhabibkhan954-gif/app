@@ -1,5 +1,4 @@
 import { STORAGE_KEYS } from "@/constants";
-import { useSnackbarStore } from "@/stores/snackbarStore";
 import { appStorage } from "@/stores/storage";
 import { useUpdateStore } from "@/stores/updateStore";
 import * as Application from "expo-application";
@@ -21,14 +20,9 @@ type CheckResponse = {
 
 const UPDATE_CHECK_ENDPOINT = "https://sausico.pages.dev/update/check";
 
-let hasCheckedThisSession = false;
-
 class UpdateService {
   async checkOnLaunch(): Promise<void> {
     if (Platform.OS !== "android") return;
-    if (hasCheckedThisSession) return;
-
-    hasCheckedThisSession = true;
 
     try {
       const payload = {
@@ -60,7 +54,6 @@ class UpdateService {
 
   private handleCheckResponse(response: CheckResponse): void {
     if (!response.updateAvailable) {
-      useUpdateStore.getState().clearUpdateAvailable();
       return;
     }
 
@@ -68,7 +61,6 @@ class UpdateService {
     const latestVersion = response.latestVersion ?? response.version;
 
     if (!apkUrl) {
-      useUpdateStore.getState().clearUpdateAvailable();
       return;
     }
 
@@ -118,25 +110,27 @@ class UpdateService {
   }
 
   private async requestInstallPermission(): Promise<void> {
+    const updateStore = useUpdateStore.getState();
+
+    updateStore.setPrompt("install-permission");
+    updateStore.setError(null);
+    updateStore.setDownloadState("idle");
+    updateStore.openUpdateDialog();
+  }
+
+  async openInstallPermissionSettings(): Promise<void> {
     const packageName = Application.applicationId;
 
-    useSnackbarStore.getState().show({
-      message: "Enable Install unknown apps to proceed. Tap Settings.",
-      variant: "warning",
-      actionLabel: "Settings",
-      onAction: async () => {
-        try {
-          await IntentLauncher.startActivityAsync(
-            "android.settings.MANAGE_UNKNOWN_APP_SOURCES",
-            {
-              data: `package:${packageName}`,
-            }
-          );
-        } catch (error) {
-          console.error("Settings open failed:", error);
-        }
-      }
-    });
+    try {
+      await IntentLauncher.startActivityAsync(
+        "android.settings.MANAGE_UNKNOWN_APP_SOURCES",
+        {
+          data: `package:${packageName}`,
+        },
+      );
+    } catch (error) {
+      console.error("Settings open failed:", error);
+    }
   }
 
   // Phase 3: Download
@@ -154,19 +148,21 @@ class UpdateService {
       const { config, fs } = RNFetchBlob;
       const path = `${fs.dirs.DownloadDir}/app-update.apk`;
 
-      const res = await config({
+      const task = config({
         fileCache: true,
         path,
-        addAndroidDownloads: {
-          useDownloadManager: true,
-          notification: true,
-          title: "Downloading update",
-          description: "App update in progress...",
-          mime: "application/vnd.android.package-archive",
-          mediaScannable: true,
-          path,
-        },
       }).fetch("GET", apkUrl);
+
+      task.progress((received, total) => {
+        const receivedBytes = Number(received);
+        const totalBytes = Number(total);
+
+        if (Number.isFinite(totalBytes) && totalBytes > 0) {
+          updateStore.setProgress(Math.min(1, receivedBytes / totalBytes));
+        }
+      });
+
+      const res = await task;
 
       const apkPath = res.path();
 
@@ -182,14 +178,8 @@ class UpdateService {
       updateStore.setDownloadState("download-failed");
       updateStore.setError("Could not download update.");
 
-      useSnackbarStore.getState().show({
-        message: "Update download failed. Tap retry.",
-        variant: "warning",
-        actionLabel: "Retry",
-        onAction: () => {
-          this.startDownloadAndInstall();
-        },
-      });
+      updateStore.setPrompt("none");
+      updateStore.openUpdateDialog();
 
       return null;
     }
@@ -198,16 +188,9 @@ class UpdateService {
   // Phase 4: Install
   private async installApk(apkPath: string): Promise<void> {
     try {
-      const FLAG_GRANT_READ_URI_PERMISSION = 0x00000001;
-      const FLAG_ACTIVITY_NEW_TASK = 0x10000000;
-
-      await IntentLauncher.startActivityAsync(
-        "android.intent.action.VIEW",
-        {
-          data: `file://${apkPath}`,
-          type: "application/vnd.android.package-archive",
-          flags: FLAG_GRANT_READ_URI_PERMISSION | FLAG_ACTIVITY_NEW_TASK,
-        }
+      await RNFetchBlob.android.actionViewIntent(
+        apkPath,
+        "application/vnd.android.package-archive"
       );
 
       useUpdateStore.getState().completeFlow();

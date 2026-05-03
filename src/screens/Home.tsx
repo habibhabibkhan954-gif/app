@@ -709,7 +709,7 @@ const styles = StyleSheet.create({
     borderRadius: 999,
     backgroundColor: "#ff9800",
     borderWidth: 2,
-    borderColor: "#121212",
+    borderColor: "#ffffff",
   },
   searchButton: {
     flexDirection: "row",
