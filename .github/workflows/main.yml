@@ -22,6 +22,9 @@ jobs:
       - name: Setup Gradle
         uses: gradle/actions/setup-gradle@v4
 
+      - name: Install dependencies
+        run: npm install
+
       - name: Make Gradle wrapper executable
         run: chmod +x android/gradlew
 
