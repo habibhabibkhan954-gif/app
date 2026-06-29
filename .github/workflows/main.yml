@@ -33,7 +33,7 @@ jobs:
         working-directory: android
 
       - name: Build (assembleRelease) using wrapper
-        run: ./gradlew assembleRelease
+        run: ./gradlew assembleRelease -Pandroid.useAndroidX=true -Pandroid.enableJetifier=true -PhermesEnabled=true -PnewArchEnabled=false
         working-directory: android
         env:
           SAUSICO_RELEASE_STORE_FILE: ${{ github.workspace }}/release.keystore

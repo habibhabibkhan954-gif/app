@@ -22,6 +22,12 @@ allprojects {
     mavenCentral()
     maven { url 'https://www.jitpack.io' }
   }
+
+  // Set global properties for all subprojects
+  ext {
+    hermesEnabled = (findProperty('hermesEnabled') ?: 'true').toBoolean()
+    newArchEnabled = (findProperty('newArchEnabled') ?: 'false').toBoolean()
+  }
 }
 
 // Global JVM compatibility configuration for all modules
