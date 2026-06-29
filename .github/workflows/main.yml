@@ -35,6 +35,7 @@ jobs:
         working-directory: android
         run: ./gradlew assembleRelease
         env:
+          GRADLE_OPTS: -Dorg.gradle.jvmargs="-Xmx4096m -XX:MaxMetaspaceSize=1024m"
           RELEASE_KEYSTORE: ${{ github.workspace }}/release.keystore
           RELEASE_KEYSTORE_PASSWORD: "opensource_build_key"
           RELEASE_KEY_ALIAS: "release-alias"
