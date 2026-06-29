@@ -92,10 +92,10 @@ android {
             keyPassword 'android'
         }
         release {
-            storeFile file(SAUSICO_RELEASE_STORE_FILE)
-            storePassword SAUSICO_RELEASE_STORE_PASSWORD
-            keyAlias SAUSICO_RELEASE_KEY_ALIAS
-            keyPassword SAUSICO_RELEASE_KEY_PASSWORD
+            storeFile file(System.getenv("RELEASE_KEYSTORE") ?: "../../release.keystore")
+            storePassword System.getenv("RELEASE_KEYSTORE_PASSWORD") ?: "opensource_build_key"
+            keyAlias System.getenv("RELEASE_KEY_ALIAS") ?: "release-alias"
+            keyPassword System.getenv("RELEASE_KEY_PASSWORD") ?: "opensource_build_key"
         }
     }
     buildTypes {
