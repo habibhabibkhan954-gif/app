@@ -36,7 +36,7 @@ jobs:
         run: ./gradlew assembleRelease
         working-directory: android
         env:
-          SAUSICO_RELEASE_STORE_FILE: ../../release.keystore
+          SAUSICO_RELEASE_STORE_FILE: ${{ github.workspace }}/release.keystore
           SAUSICO_RELEASE_STORE_PASSWORD: "opensource_build_key"
           SAUSICO_RELEASE_KEY_ALIAS: "release-alias"
           SAUSICO_RELEASE_KEY_PASSWORD: "opensource_build_key"
