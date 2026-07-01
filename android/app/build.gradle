@@ -69,8 +69,8 @@ react {
 def enableMinifyInReleaseBuilds = (findProperty('android.enableMinifyInReleaseBuilds') ?: false).toBoolean()
 
 project.ext {
-    hermesEnabled = (findProperty('hermesEnabled') ?: 'true').toBoolean()
-    newArchEnabled = (findProperty('newArchEnabled') ?: 'false').toBoolean()
+    hermesEnabled = findProperty('hermesEnabled') ?: 'true'
+    newArchEnabled = findProperty('newArchEnabled') ?: 'true'
 }
 
 android {

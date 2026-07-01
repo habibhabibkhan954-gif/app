@@ -2,8 +2,8 @@
 
 buildscript {
   ext {
-    hermesEnabled = true
-    newArchEnabled = false
+    hermesEnabled = "true"
+    newArchEnabled = "true"
   }
   repositories {
     google()
@@ -25,8 +25,8 @@ allprojects {
 
   // Set global properties for all subprojects
   ext {
-    hermesEnabled = (findProperty('hermesEnabled') ?: 'true').toBoolean()
-    newArchEnabled = (findProperty('newArchEnabled') ?: 'false').toBoolean()
+    hermesEnabled = findProperty('hermesEnabled') ?: 'true'
+    newArchEnabled = findProperty('newArchEnabled') ?: 'true'
   }
 }
 
