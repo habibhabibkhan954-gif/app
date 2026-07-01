@@ -35,7 +35,7 @@ jobs:
         run: chmod +x android/gradlew
 
       - name: Build (assembleRelease) using wrapper
-        run: ./gradlew assembleRelease -Pandroid.useAndroidX=true -Pandroid.enableJetifier=true -PhermesEnabled=true -PnewArchEnabled=false
+        run: ./gradlew assembleRelease -Pandroid.useAndroidX=true -Pandroid.enableJetifier=true -PhermesEnabled=true -PnewArchEnabled=true
         working-directory: android
         env:
           SAUSICO_RELEASE_STORE_FILE: ${{ github.workspace }}/release.keystore
