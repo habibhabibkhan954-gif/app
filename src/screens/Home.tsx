@@ -1,6 +1,12 @@
 import { GenericMediaItem, TrackItem } from "@/components";
 import { AUDIO_QUALITY, COLORS, UI_CONFIG } from "@/constants";
-import { useHomeStore, usePlayerStore, useUpdateStore } from "@/stores";
+import { THEMES, ThemeKey } from "@/constants/themes";
+import {
+    useHomeStore,
+    usePlayerStore,
+    useUIStore,
+    useUpdateStore,
+} from "@/stores";
 import { getScreenPaddingBottom } from "@/utils";
 import { Models } from "@saavn-labs/sdk";
 
@@ -32,6 +38,7 @@ import {
     Modal,
     Portal,
     RadioButton,
+    Switch,
     Text,
 } from "react-native-paper";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -224,6 +231,7 @@ const HomeScreen: React.FC<HomeScreenProps> = ({
 }) => {
   const { playSong, currentSong } = usePlayerStore();
   const { updateAvailable, openUpdateDialog } = useUpdateStore();
+  const { currentTheme, setCurrentTheme, biometricsEnabled, setBiometricsEnabled } = useUIStore();
   const insets = useSafeAreaInsets();
   const bottomPadding = getScreenPaddingBottom(true, true) + insets.bottom;
 
@@ -583,7 +591,7 @@ const HomeScreen: React.FC<HomeScreenProps> = ({
             <View style={styles.offlineBanner}>
               <IconButton icon="wifi-off" size={16} iconColor="#ff9800" />
               <Text style={styles.offlineBannerText}>
-                You're offline • Showing cached content
+                You&apos;re offline • Showing cached content
               </Text>
             </View>
           )}
@@ -624,12 +632,64 @@ const HomeScreen: React.FC<HomeScreenProps> = ({
             Settings
           </Text>
 
-          <View style={styles.settingSection}>
-            <Text variant="titleMedium" style={styles.settingLabel}>
-              Audio Quality
-            </Text>
+          <ScrollView showsVerticalScrollIndicator={false} style={{ maxHeight: 400 }}>
+            <View style={styles.settingSection}>
+              <Text variant="titleMedium" style={styles.settingLabel}>
+                Theme
+              </Text>
+              <View style={styles.themeGrid}>
+                {(Object.keys(THEMES) as ThemeKey[]).map((key) => (
+                  <TouchableOpacity
+                    key={key}
+                    style={[
+                      styles.themeItem,
+                      currentTheme === key && styles.themeItemSelected,
+                      { backgroundColor: THEMES[key].colors.background },
+                    ]}
+                    onPress={() => setCurrentTheme(key)}
+                  >
+                    <View
+                      style={[
+                        styles.themeColorCircle,
+                        { backgroundColor: THEMES[key].colors.primary },
+                      ]}
+                    />
+                    <Text
+                      variant="labelSmall"
+                      style={[
+                        styles.themeItemText,
+                        { color: THEMES[key].colors.onSurface },
+                      ]}
+                    >
+                      {THEMES[key].name}
+                    </Text>
+                  </TouchableOpacity>
+                ))}
+              </View>
+            </View>
 
-            <RadioButton.Group
+            <View style={styles.settingSection}>
+              <View style={styles.settingRow}>
+                <Text variant="titleMedium" style={styles.settingLabel}>
+                  Biometric Lock
+                </Text>
+                <Switch
+                  value={biometricsEnabled}
+                  onValueChange={setBiometricsEnabled}
+                  color={COLORS.PRIMARY}
+                />
+              </View>
+              <Text variant="bodySmall" style={styles.settingSubtext}>
+                Require fingerprint or face ID to open the app
+              </Text>
+            </View>
+
+            <View style={styles.settingSection}>
+              <Text variant="titleMedium" style={styles.settingLabel}>
+                Audio Quality
+              </Text>
+
+              <RadioButton.Group
               onValueChange={(value) =>
                 handleQualityChange(value as keyof typeof AUDIO_QUALITY)
               }
@@ -649,8 +709,9 @@ const HomeScreen: React.FC<HomeScreenProps> = ({
                 <RadioButton.Android value="HIGH" color={COLORS.PRIMARY} />
                 <Text style={styles.radioLabel}>High - Best quality</Text>
               </View>
-            </RadioButton.Group>
-          </View>
+              </RadioButton.Group>
+            </View>
+          </ScrollView>
 
           <TouchableOpacity
             style={styles.modalCloseButton}
@@ -932,8 +993,17 @@ const styles = StyleSheet.create({
   },
   settingLabel: {
     color: "#fff",
-    marginBottom: 16,
     fontWeight: "600",
+  },
+  settingRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: 8,
+  },
+  settingSubtext: {
+    color: "#b3b3b3",
+    fontSize: 12,
   },
   radioOption: {
     flexDirection: "row",
@@ -944,6 +1014,32 @@ const styles = StyleSheet.create({
     color: "#fff",
     fontSize: 15,
     marginLeft: 8,
+  },
+  themeGrid: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: 8,
+  },
+  themeItem: {
+    width: "31%",
+    padding: 8,
+    borderRadius: 8,
+    alignItems: "center",
+    borderWidth: 1,
+    borderColor: "transparent",
+  },
+  themeItemSelected: {
+    borderColor: COLORS.PRIMARY,
+  },
+  themeColorCircle: {
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+    marginBottom: 4,
+  },
+  themeItemText: {
+    fontSize: 10,
+    textAlign: "center",
   },
   modalCloseButton: {
     backgroundColor: "#1db954",

@@ -9,6 +9,8 @@ interface UIState {
   modalType: string | null;
   menuVisible: string | null;
   settingsModalVisible: boolean;
+  currentTheme: string;
+  biometricsEnabled: boolean;
   refreshing: boolean;
   error: string | null;
   setFullPlayerVisible: (visible: boolean) => void;
@@ -17,6 +19,8 @@ interface UIState {
   setModalType: (type: string | null) => void;
   setMenuVisible: (id: string | null) => void;
   setSettingsModalVisible: (visible: boolean) => void;
+  setCurrentTheme: (theme: string) => void;
+  setBiometricsEnabled: (enabled: boolean) => void;
   setRefreshing: (refreshing: boolean) => void;
   setError: (error: string | null) => void;
   resetUIState: () => void;
@@ -29,6 +33,8 @@ const initialState = {
   modalType: null,
   menuVisible: null,
   settingsModalVisible: false,
+  currentTheme: "spotify",
+  biometricsEnabled: false,
   refreshing: false,
   error: null,
 };
@@ -45,6 +51,9 @@ export const useUIStore = create<UIState>()(
       setMenuVisible: (id: string | null) => set({ menuVisible: id }),
       setSettingsModalVisible: (visible: boolean) =>
         set({ settingsModalVisible: visible }),
+      setCurrentTheme: (theme: string) => set({ currentTheme: theme }),
+      setBiometricsEnabled: (enabled: boolean) =>
+        set({ biometricsEnabled: enabled }),
       setRefreshing: (refreshing: boolean) => set({ refreshing }),
       setError: (error: string | null) => set({ error }),
       resetUIState: () => set(initialState),
@@ -55,6 +64,8 @@ export const useUIStore = create<UIState>()(
       partialize: (state) => ({
         activeTab: state.activeTab,
         selectedTab: state.selectedTab,
+        currentTheme: state.currentTheme,
+        biometricsEnabled: state.biometricsEnabled,
       }),
     },
   ),
