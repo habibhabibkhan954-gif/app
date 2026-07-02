@@ -1,6 +1,10 @@
 // Top-level build file where you can add configuration options common to all sub-projects/modules.
 
 buildscript {
+  ext {
+    hermesEnabled = "true"
+    newArchEnabled = "true"
+  }
   repositories {
     google()
     mavenCentral()
@@ -17,6 +21,12 @@ allprojects {
     google()
     mavenCentral()
     maven { url 'https://www.jitpack.io' }
+  }
+
+  // Set global properties for all subprojects
+  ext {
+    hermesEnabled = findProperty('hermesEnabled') ?: 'true'
+    newArchEnabled = findProperty('newArchEnabled') ?: 'true'
   }
 }
 

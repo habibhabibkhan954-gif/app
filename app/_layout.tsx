@@ -1,26 +1,27 @@
 import AppUpdateDialog from "@/components/common/AppUpdateDialog";
 import GlobalSnackbar from "@/components/common/GlobalSnackbar";
+import { THEMES, ThemeKey } from "@/constants/themes";
 import { playerService } from "@/services/PlayerService";
 import { updateService } from "@/services/UpdateService";
 import { usePlayerStore } from "@/stores/playerStore";
+import { useUIStore } from "@/stores/uiStore";
 import { iconFonts } from "@/utils/loadFonts";
 import { setFetchConfig } from "@saavn-labs/sdk";
 import { useFonts } from "expo-font";
 import { Link, Stack } from "expo-router";
+import * as Device from "expo-device";
+import * as LocalAuthentication from "expo-local-authentication";
 import * as SplashScreen from "expo-splash-screen";
 import { setStatusBarBackgroundColor, StatusBar } from "expo-status-bar";
-import { useEffect } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   AppState,
   Text as RNText,
   TextInput as RNTextInput,
   StyleSheet,
+  View,
 } from "react-native";
-import {
-  configureFonts,
-  MD3DarkTheme,
-  PaperProvider,
-} from "react-native-paper";
+import { configureFonts, PaperProvider } from "react-native-paper";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 void SplashScreen.preventAutoHideAsync();
@@ -35,25 +36,6 @@ const fonts = configureFonts({
   },
 });
 
-const theme = {
-  ...MD3DarkTheme,
-  fonts,
-  colors: {
-    ...MD3DarkTheme.colors,
-    primary: "#1DB954",
-    secondary: "#1ed760",
-    background: "#121212",
-    surface: "#282828",
-    surfaceVariant: "#333333",
-    onSurface: "#ffffff",
-    onSurfaceVariant: "#b3b3b3",
-    error: "#cf6679",
-    onError: "#000000",
-    outline: "#404040",
-  },
-  roundness: 12,
-};
-
 export default function Layout() {
   const [fontsLoaded, fontError] = useFonts({
     SpotifyMedium: require("../assets/fonts/SpotifyMedium.ttf"),
@@ -61,6 +43,18 @@ export default function Layout() {
   });
 
   const { restoreLastTrack } = usePlayerStore();
+  const { currentTheme, biometricsEnabled } = useUIStore();
+  const [isUnlocked, setIsUnlocked] = useState(false);
+  const [isTechno, setIsTechno] = useState<boolean | null>(null);
+
+  const theme = useMemo(() => {
+    const selectedTheme = THEMES[currentTheme as ThemeKey] || THEMES.spotify;
+    return {
+      ...selectedTheme,
+      fonts,
+      roundness: 12,
+    };
+  }, [currentTheme]);
 
   useEffect(() => {
     if (fontsLoaded) {
@@ -86,8 +80,6 @@ export default function Layout() {
     playerService.initialize();
     void updateService.checkOnLaunch();
 
-    setStatusBarBackgroundColor("#121212", false);
-
     const subscription = AppState.addEventListener("change", (nextAppState) => {
       if (nextAppState === "inactive") {
         playerService.stop();
@@ -98,21 +90,76 @@ export default function Layout() {
   }, []);
 
   useEffect(() => {
+    const brand = Device.brand?.toUpperCase();
+    setIsTechno(brand === "TECNO");
+  }, []);
+
+  useEffect(() => {
+    const handleAuth = async () => {
+      if (isTechno === false) return;
+
+      try {
+        if (biometricsEnabled) {
+          const hasHardware = await LocalAuthentication.hasHardwareAsync();
+          const isEnrolled = await LocalAuthentication.isEnrolledAsync();
+
+          if (hasHardware && isEnrolled) {
+            const result = await LocalAuthentication.authenticateAsync({
+              promptMessage: "Unlock Sausico",
+              fallbackLabel: "Use Passcode",
+            });
+
+            setIsUnlocked(result.success);
+          } else {
+            setIsUnlocked(true);
+          }
+        } else {
+          setIsUnlocked(true);
+        }
+      } catch (error) {
+        console.error("[Layout] Biometric auth error:", error);
+        setIsUnlocked(true);
+      }
+    };
+
     if (fontsLoaded || fontError) {
+      void handleAuth();
+    }
+  }, [fontsLoaded, fontError, biometricsEnabled]);
+
+  useEffect(() => {
+    if ((fontsLoaded || fontError) && isUnlocked && isTechno !== null) {
       void SplashScreen.hideAsync();
       void restoreLastTrack();
     }
-  }, [fontsLoaded, fontError, restoreLastTrack]);
+  }, [fontsLoaded, fontError, restoreLastTrack, isUnlocked, isTechno]);
 
   if (!fontsLoaded && !fontError) {
     return null;
   }
 
+  if (isTechno === false) {
+    return (
+      <View style={[styles.root, { justifyContent: "center", alignItems: "center", padding: 20 }]}>
+        <RNText style={{ color: "#fff", fontSize: 20, textAlign: "center", fontFamily: "SpotifyMedium" }}>
+          This application is only available for TECNO mobile devices.
+        </RNText>
+      </View>
+    );
+  }
+
+  if (!isUnlocked && biometricsEnabled) {
+    return null;
+  }
+
   return (
     <PaperProvider theme={theme}>
-      <StatusBar backgroundColor="#121212" style="dark" />
+      <StatusBar
+        backgroundColor={theme.colors.background}
+        style={theme.dark ? "light" : "dark"}
+      />
       <SafeAreaView
-        style={styles.root}
+        style={[styles.root, { backgroundColor: theme.colors.background }]}
         edges={["top", "bottom", "left", "right"]}
       >
         <Link
@@ -122,21 +169,21 @@ export default function Layout() {
         <Stack
           screenOptions={{
             headerShown: false,
-            contentStyle: styles.screenStyle,
+            contentStyle: { backgroundColor: theme.colors.background },
           }}
         >
           <Stack.Screen
             name="(tabs)"
             options={{
               headerShown: false,
-              contentStyle: styles.screenStyle,
+              contentStyle: { backgroundColor: theme.colors.background },
             }}
           />
           <Stack.Screen
             name="song/[id]"
             options={{
               headerShown: false,
-              contentStyle: styles.screenStyle,
+              contentStyle: { backgroundColor: theme.colors.background },
               gestureEnabled: false,
               animationDuration: 0,
             }}
@@ -146,7 +193,7 @@ export default function Layout() {
             options={{
               presentation: "modal",
               headerShown: false,
-              contentStyle: styles.screenStyle,
+              contentStyle: { backgroundColor: theme.colors.background },
             }}
           />
           <Stack.Screen
@@ -154,7 +201,7 @@ export default function Layout() {
             options={{
               presentation: "modal",
               headerShown: false,
-              contentStyle: styles.screenStyle,
+              contentStyle: { backgroundColor: theme.colors.background },
             }}
           />
           <Stack.Screen
@@ -162,7 +209,7 @@ export default function Layout() {
             options={{
               presentation: "modal",
               headerShown: false,
-              contentStyle: styles.screenStyle,
+              contentStyle: { backgroundColor: theme.colors.background },
             }}
           />
         </Stack>

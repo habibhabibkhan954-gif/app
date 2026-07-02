@@ -21,6 +21,7 @@ import { Models } from "@saavn-labs/sdk";
 import { TrackContextMenu } from "../common";
 import TrackItem from "../items/TrackItem";
 import LoadingHeartbeat from "./LoadingHeartBeat";
+import SoundWave from "./SoundWave";
 
 import { MaterialIcons } from "@expo/vector-icons";
 import Slider from "@react-native-community/slider";
@@ -248,6 +249,11 @@ const FullPlayer: React.FC<FullPlayerProps> = ({ visible, onClose }) => {
                   contentFit="cover"
                 />
               </View>
+              {status === "playing" && (
+                <View style={styles.soundWaveWrapper}>
+                  <SoundWave />
+                </View>
+              )}
             </View>
 
             <View style={styles.infoContainer}>
@@ -418,6 +424,10 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.6,
     shadowRadius: 30,
     elevation: 24,
+  },
+  soundWaveWrapper: {
+    marginTop: 20,
+    height: 60,
   },
   artwork: {
     width: width - 48,
