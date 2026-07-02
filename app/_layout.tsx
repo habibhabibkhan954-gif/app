@@ -9,6 +9,7 @@ import { iconFonts } from "@/utils/loadFonts";
 import { setFetchConfig } from "@saavn-labs/sdk";
 import { useFonts } from "expo-font";
 import { Link, Stack } from "expo-router";
+import * as Device from "expo-device";
 import * as LocalAuthentication from "expo-local-authentication";
 import * as SplashScreen from "expo-splash-screen";
 import { setStatusBarBackgroundColor, StatusBar } from "expo-status-bar";
@@ -18,6 +19,7 @@ import {
   Text as RNText,
   TextInput as RNTextInput,
   StyleSheet,
+  View,
 } from "react-native";
 import { configureFonts, PaperProvider } from "react-native-paper";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -43,6 +45,7 @@ export default function Layout() {
   const { restoreLastTrack } = usePlayerStore();
   const { currentTheme, biometricsEnabled } = useUIStore();
   const [isUnlocked, setIsUnlocked] = useState(false);
+  const [isTechno, setIsTechno] = useState<boolean | null>(null);
 
   const theme = useMemo(() => {
     const selectedTheme = THEMES[currentTheme as ThemeKey] || THEMES.spotify;
@@ -87,7 +90,14 @@ export default function Layout() {
   }, []);
 
   useEffect(() => {
+    const brand = Device.brand?.toUpperCase();
+    setIsTechno(brand === "TECNO");
+  }, []);
+
+  useEffect(() => {
     const handleAuth = async () => {
+      if (isTechno === false) return;
+
       try {
         if (biometricsEnabled) {
           const hasHardware = await LocalAuthentication.hasHardwareAsync();
@@ -118,14 +128,24 @@ export default function Layout() {
   }, [fontsLoaded, fontError, biometricsEnabled]);
 
   useEffect(() => {
-    if ((fontsLoaded || fontError) && isUnlocked) {
+    if ((fontsLoaded || fontError) && isUnlocked && isTechno !== null) {
       void SplashScreen.hideAsync();
       void restoreLastTrack();
     }
-  }, [fontsLoaded, fontError, restoreLastTrack, isUnlocked]);
+  }, [fontsLoaded, fontError, restoreLastTrack, isUnlocked, isTechno]);
 
   if (!fontsLoaded && !fontError) {
     return null;
+  }
+
+  if (isTechno === false) {
+    return (
+      <View style={[styles.root, { justifyContent: "center", alignItems: "center", padding: 20 }]}>
+        <RNText style={{ color: "#fff", fontSize: 20, textAlign: "center", fontFamily: "SpotifyMedium" }}>
+          This application is only available for TECNO mobile devices.
+        </RNText>
+      </View>
+    );
   }
 
   if (!isUnlocked && biometricsEnabled) {
