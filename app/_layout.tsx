@@ -88,23 +88,26 @@ export default function Layout() {
 
   useEffect(() => {
     const handleAuth = async () => {
-      if (biometricsEnabled) {
-        const hasHardware = await LocalAuthentication.hasHardwareAsync();
-        const isEnrolled = await LocalAuthentication.isEnrolledAsync();
+      try {
+        if (biometricsEnabled) {
+          const hasHardware = await LocalAuthentication.hasHardwareAsync();
+          const isEnrolled = await LocalAuthentication.isEnrolledAsync();
 
-        if (hasHardware && isEnrolled) {
-          const result = await LocalAuthentication.authenticateAsync({
-            promptMessage: "Unlock Sausico",
-            fallbackLabel: "Use Passcode",
-          });
+          if (hasHardware && isEnrolled) {
+            const result = await LocalAuthentication.authenticateAsync({
+              promptMessage: "Unlock Sausico",
+              fallbackLabel: "Use Passcode",
+            });
 
-          if (result.success) {
+            setIsUnlocked(result.success);
+          } else {
             setIsUnlocked(true);
           }
         } else {
           setIsUnlocked(true);
         }
-      } else {
+      } catch (error) {
+        console.error("[Layout] Biometric auth error:", error);
         setIsUnlocked(true);
       }
     };
